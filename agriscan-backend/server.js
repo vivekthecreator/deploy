@@ -1,4 +1,4 @@
-import express from 'express';
+﻿import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { GoogleGenerativeAI } from '@google/generative-ai';
@@ -6,7 +6,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 10000;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 if (!GEMINI_API_KEY) {
@@ -17,10 +17,10 @@ const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
 // Candidate models in priority order
 const CANDIDATE_MODELS = [
+  'gemini-3.8-flash',
+  'gemini-3.5-flash',
   'gemini-3.1-flash-lite',
-  'gemini-3.5-flash-lite',
-  'gemini-flash-latest',
-  'gemini-3.6-flash'
+  'gemini-flash-latest'
 ];
 
 app.use(cors());
@@ -67,7 +67,7 @@ app.post('/api/diagnose', async (req, res) => {
     growthStage = 'Growth Stage', 
     fieldName = 'Field Plot', 
     symptoms = '',
-    weatherInfo = 'Temperature 26°C, Relative Humidity 84%, Incoming Rain in 7 hours'
+    weatherInfo = 'Temperature 26Â°C, Relative Humidity 84%, Incoming Rain in 7 hours'
   } = req.body;
 
   console.log(`[Diagnostic Scan] Crop: ${crop} | Stage: ${growthStage} | Plot: ${fieldName}`);
@@ -163,8 +163,8 @@ Return ONLY a valid JSON object matching this structure:
         cropCategory: matchedRecord?.cropCategory || 'Field Crop',
         scientificCropName: matchedRecord?.scientificCropName || '',
         pathogenType: matchedRecord?.pathogenType || 'Foliar Pathogen',
-        benchmarkSource: matchedRecord?.benchmarkSource || 'PlantVillage • SAGE CVPR 2026 • CDDMBench • Roboflow',
-        visualSignature: matchedRecord?.visualSignature || (result.identifiedSymptoms ? result.identifiedSymptoms.join(' • ') : ''),
+        benchmarkSource: matchedRecord?.benchmarkSource || 'PlantVillage â€¢ SAGE CVPR 2026 â€¢ CDDMBench â€¢ Roboflow',
+        visualSignature: matchedRecord?.visualSignature || (result.identifiedSymptoms ? result.identifiedSymptoms.join(' â€¢ ') : ''),
         precautionsAndPrevention: (result.precautionsAndPrevention && result.precautionsAndPrevention.length > 0)
           ? result.precautionsAndPrevention
           : (matchedRecord?.precautions || []),
@@ -237,7 +237,7 @@ Your role:
 1. Help farmers diagnose crop diseases, insect pests, nutrient deficiencies, and weather risks.
 2. Provide concise, actionable, and practical guidance.
 3. Suggest inspecting leaves, stems, and roots, and recommend taking a photo using "Diagnose My Crop" for laboratory-grade AI image diagnosis.
-4. Provide advice in simple English, with Hindi terms in parentheses when relevant (e.g. झुलसा, तना छेदक).
+4. Provide advice in simple English, with Hindi terms in parentheses when relevant (e.g. à¤à¥à¤²à¤¸à¤¾, à¤¤à¤¨à¤¾ à¤›à¥‡à¤¦à¤•).
 5. Always advise safety when using agrochemicals and prioritize organic / bio-rational solutions.`;
 
   // Try Gemini models
@@ -269,12 +269,20 @@ Your role:
     modelUsed: 'KisanRakshak-Rule-Engine'
   });
 });
+app.get("/", (req, res) => {
+    res.json({
+        status: "success",
+        message: "Kisan Rakshak Gemini AI Diagnostic Server is running 🚀"
+    });
+});
+
 
 app.listen(PORT, () => {
   console.log(`=================================================`);
-  console.log(`  🌾 Kisan Rakshak Gemini AI Diagnostic Server   `);
-  console.log(`  🚀 Live on: http://localhost:${PORT}          `);
-  console.log(`  🔑 Models: ${CANDIDATE_MODELS.join(', ')}      `);
+  console.log(`  ðŸŒ¾ Kisan Rakshak Gemini AI Diagnostic Server   `);
+  console.log(`  ðŸš€ Live on: http://localhost:${PORT}          `);
+  console.log(`  ðŸ”‘ Models: ${CANDIDATE_MODELS.join(', ')}      `);
   console.log(`=================================================`);
 });
+
 
