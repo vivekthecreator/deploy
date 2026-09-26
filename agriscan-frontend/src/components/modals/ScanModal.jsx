@@ -1,154 +1,33 @@
-import React, { useState, useRef, useEffect } from 'react';
+﻿import React, { useState, useRef, useEffect } from 'react';
 import {
   X, Upload, CheckCircle2, AlertTriangle, ShieldCheck, Leaf, RefreshCw,
   Sparkles, ChevronDown, Check, ShieldAlert, Info, CloudSun,
-  Camera, Video, VideoOff, Circle, FlipHorizontal, SwitchCamera
+  Camera, Video, VideoOff, Circle, FlipHorizontal, SwitchCamera, MapPin, Calendar, Sprout
 } from 'lucide-react';
 import { cropDatabase } from '../../data/cropData';
 import { getAllPlotHistories, getPlotHistory, appendScanToHistory, evaluateFollowUpOutcome } from '../../data/progressiveScanHistory';
 
 const CROP_OPTIONS = [
-  { id: 'tomato', name: 'Tomato', icon: '🍅' },
-  { id: 'potato', name: 'Potato', icon: '🥔' },
-  { id: 'corn', name: 'Corn (Maize)', icon: '🌽' },
-  { id: 'apple', name: 'Apple', icon: '🍏' },
-  { id: 'wheat', name: 'Wheat', icon: '🌾' },
-  { id: 'grape', name: 'Grape', icon: '🍇' },
-  { id: 'bell-pepper', name: 'Bell Pepper', icon: '🫑' },
-  { id: 'onion', name: 'Onion', icon: '🧅' },
-  { id: 'soybean', name: 'Soybean', icon: '🌿' },
-  { id: 'strawberry', name: 'Strawberry', icon: '🍓' },
+  { id: 'tomato', name: 'Tomato', icon: 'ðŸ…' },
+  { id: 'potato', name: 'Potato', icon: 'ðŸ¥”' },
+  { id: 'corn', name: 'Corn (Maize)', icon: 'ðŸŒ½' },
+  { id: 'apple', name: 'Apple', icon: 'ðŸ' },
+  { id: 'wheat', name: 'Wheat', icon: 'ðŸŒ¾' },
+  { id: 'grape', name: 'Grape', icon: 'ðŸ‡' },
+  { id: 'bell-pepper', name: 'Bell Pepper', icon: 'ðŸ«‘' },
+  { id: 'onion', name: 'Onion', icon: 'ðŸ§…' },
+  { id: 'soybean', name: 'Soybean', icon: 'ðŸŒ¿' },
+  { id: 'strawberry', name: 'Strawberry', icon: 'ðŸ“' },
 ];
 
 const STAGE_OPTIONS = [
-  { id: 'seedling', name: 'Seedling', icon: '🌱' },
-  { id: 'vegetative', name: 'Vegetative', icon: '🌿' },
-  { id: 'flowering', name: 'Flowering', icon: '🌸' },
-  { id: 'fruiting', name: 'Fruiting', icon: '🍅' },
-  { id: 'mature', name: 'Mature / Harvest', icon: '🌾' },
-  { id: 'post-harvest', name: 'Post-Harvest', icon: '🍂' },
+  { id: 'seedling', name: 'Seedling', icon: 'ðŸŒ±' },
+  { id: 'vegetative', name: 'Vegetative', icon: 'ðŸŒ¿' },
+  { id: 'flowering', name: 'Flowering', icon: 'ðŸŒ¸' },
+  { id: 'fruiting', name: 'Fruiting', icon: 'ðŸ…' },
+  { id: 'mature', name: 'Mature / Harvest', icon: 'ðŸŒ¾' },
+  { id: 'post-harvest', name: 'Post-Harvest', icon: 'ðŸ‚' },
 ];
-
-function ScanFormFields({
-  selectedCrop, setSelectedCrop, selectedStage, setSelectedStage,
-  isCropDropdownOpen, setIsCropDropdownOpen, isStageDropdownOpen, setIsStageDropdownOpen,
-  fieldName, setFieldName, scanDate, setScanDate, symptoms, setSymptoms,
-  cropDropdownRef, stageDropdownRef, activeTab, uploadedImage, setUploadedImage,
-  linkedPlotId, handleSelectPlot, previousScan
-}) {
-  return (
-    <div className="space-y-3">
-      {/* Plot Linking Selector for Progressive Tracking */}
-      <div className="p-3 rounded-2xl bg-emerald-50/50 border border-emerald-100/90 space-y-1.5">
-        <div className="flex items-center justify-between">
-          <label className="text-[11px] font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
-            <RefreshCw className="w-3.5 h-3.5 text-[#257038]" />
-            <span>Link to Monitored Plot (Progressive Follow-Up)</span>
-          </label>
-          {previousScan && (
-            <span className="text-[10px] text-emerald-800 bg-emerald-100 border border-emerald-200 px-2 py-0.2 rounded-full font-bold">
-              Scan #{previousScan.scanNumber} on Record
-            </span>
-          )}
-        </div>
-        <select
-          value={linkedPlotId || ''}
-          onChange={(e) => handleSelectPlot && handleSelectPlot(e.target.value)}
-          className="w-full px-3 py-2 text-xs rounded-xl border border-gray-300 bg-white font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#257038]"
-        >
-          <option value="">Unmapped / Standalone New Scan</option>
-          <option value="wheat-field-a">Field A (Wheat • 2.4 acres) — Follow-up Scan #3</option>
-          <option value="soybean-field-b">Field B (Soybean • 3.1 acres) — Follow-up Scan #3</option>
-          <option value="tomato-field-c">Field C (Tomato • 1.2 acres) — Follow-up Scan #3</option>
-          <option value="maize-field-d">Field D (Maize • 2.0 acres) — Follow-up Scan #2</option>
-        </select>
-
-        {previousScan && (
-          <div className="mt-1 p-2 rounded-xl bg-white border border-emerald-200 text-xs text-emerald-950 space-y-0.5">
-            <p className="font-bold flex items-center gap-1">
-              <CheckCircle2 className="w-3.5 h-3.5 text-[#257038]" />
-              <span>Previous Diagnosis ({previousScan.date}): {previousScan.diagnosis}</span>
-            </p>
-            <p className="text-[11px] text-gray-600 pl-4">
-              <strong>Prescribed Measure:</strong> {previousScan.prescribedTactic}
-            </p>
-          </div>
-        )}
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 relative z-30">
-        <div className="relative" ref={cropDropdownRef}>
-          <button type="button"
-            onClick={() => { setIsCropDropdownOpen(!isCropDropdownOpen); setIsStageDropdownOpen(false); }}
-            className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm bg-white hover:border-[#257038] focus:outline-none focus:ring-2 focus:ring-[#257038] transition-all cursor-pointer text-left"
-          >
-            {selectedCrop
-              ? <span className="flex items-center gap-2 font-medium text-gray-900 truncate"><span>{selectedCrop.icon}</span><span>{selectedCrop.name}</span></span>
-              : <span className="text-gray-400">Select Crop...</span>}
-            <ChevronDown className={"w-4 h-4 text-gray-500 transition-transform " + (isCropDropdownOpen ? "rotate-180" : "")} />
-          </button>
-          {isCropDropdownOpen && (
-            <div className="absolute top-full mt-1.5 left-0 right-0 z-50 bg-white rounded-xl shadow-2xl border border-gray-200 py-1.5 max-h-48 overflow-y-auto">
-              <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-gray-400 border-b border-gray-100">Choose Crop</div>
-              {CROP_OPTIONS.map((crop) => (
-                <button key={crop.id} type="button"
-                  onClick={() => {
-                    setSelectedCrop(crop); setIsCropDropdownOpen(false);
-                    if (!uploadedImage && activeTab === 'upload') {
-                      const f = cropDatabase.find(c => c.id.includes(crop.id));
-                      if (f) setUploadedImage(f.image);
-                    }
-                  }}
-                  className={"w-full px-3.5 py-2 text-left text-xs font-medium flex items-center justify-between hover:bg-green-50 hover:text-[#257038] transition-colors cursor-pointer " + (selectedCrop && selectedCrop.id === crop.id ? "bg-green-50/80 text-[#257038] font-bold" : "text-gray-700")}
-                >
-                  <span className="flex items-center gap-2"><span>{crop.icon}</span><span>{crop.name}</span></span>
-                  {selectedCrop && selectedCrop.id === crop.id && <Check className="w-3.5 h-3.5 text-[#257038]" />}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-        <div className="relative" ref={stageDropdownRef}>
-          <button type="button"
-            onClick={() => { setIsStageDropdownOpen(!isStageDropdownOpen); setIsCropDropdownOpen(false); }}
-            className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm bg-white hover:border-[#257038] focus:outline-none focus:ring-2 focus:ring-[#257038] transition-all cursor-pointer text-left"
-          >
-            {selectedStage
-              ? <span className="flex items-center gap-2 font-medium text-gray-900 truncate"><span>{selectedStage.icon}</span><span>{selectedStage.name}</span></span>
-              : <span className="text-gray-400">Select Growth Stage...</span>}
-            <ChevronDown className={"w-4 h-4 text-gray-500 transition-transform " + (isStageDropdownOpen ? "rotate-180" : "")} />
-          </button>
-          {isStageDropdownOpen && (
-            <div className="absolute top-full mt-1.5 left-0 right-0 z-50 bg-white rounded-xl shadow-2xl border border-gray-200 py-1.5 max-h-48 overflow-y-auto">
-              <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-gray-400 border-b border-gray-100">Growth Stage</div>
-              {STAGE_OPTIONS.map((stage) => (
-                <button key={stage.id} type="button"
-                  onClick={() => { setSelectedStage(stage); setIsStageDropdownOpen(false); }}
-                  className={"w-full px-3.5 py-2 text-left text-xs font-medium flex items-center justify-between hover:bg-green-50 hover:text-[#257038] transition-colors cursor-pointer " + (selectedStage && selectedStage.id === stage.id ? "bg-green-50/80 text-[#257038] font-bold" : "text-gray-700")}
-                >
-                  <span className="flex items-center gap-2"><span>{stage.icon}</span><span>{stage.name}</span></span>
-                  {selectedStage && selectedStage.id === stage.id && <Check className="w-3.5 h-3.5 text-[#257038]" />}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 relative z-10">
-        <input type="text" value={fieldName} onChange={(e) => setFieldName(e.target.value)}
-          placeholder="Field name (Field A, Farm 1...)"
-          className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-[#257038] focus:border-transparent placeholder:text-gray-400" />
-        <input type="date" value={scanDate} onChange={(e) => setScanDate(e.target.value)}
-          className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-[#257038] focus:border-transparent cursor-pointer" />
-      </div>
-      <div className="relative z-10">
-        <textarea rows="2" value={symptoms} onChange={(e) => setSymptoms(e.target.value)}
-          placeholder="Visible symptoms (Optional) - e.g. brown spots, yellow leaves, white powder"
-          className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-[#257038] focus:border-transparent resize-none placeholder:text-gray-400" />
-      </div>
-    </div>
-  );
-}
 
 export default function ScanModal({ isOpen, onClose, initialPlot }) {
   const [activeTab, setActiveTab] = useState('upload');
@@ -183,6 +62,8 @@ export default function ScanModal({ isOpen, onClose, initialPlot }) {
   );
   const [treatmentOutcomeWorked, setTreatmentOutcomeWorked] = useState(null);
   const [savedToHistory, setSavedToHistory] = useState(false);
+  const [userLocation, setUserLocation] = useState('Detecting location...');
+  const scanDateAuto = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 
   useEffect(() => {
     if (initialPlot) {
@@ -193,7 +74,7 @@ export default function ScanModal({ isOpen, onClose, initialPlot }) {
         if (found) setSelectedCrop(found);
       }
       if (initialPlot.plotLocation) {
-        setFieldName(initialPlot.plotLocation.split('•')[0].trim());
+        setFieldName(initialPlot.plotLocation.split('â€¢')[0].trim());
       }
     }
   }, [initialPlot]);
@@ -213,7 +94,7 @@ export default function ScanModal({ isOpen, onClose, initialPlot }) {
     if (hist) {
       const foundCrop = CROP_OPTIONS.find(c => c.name.toLowerCase().includes(hist.cropName.toLowerCase()));
       if (foundCrop) setSelectedCrop(foundCrop);
-      setFieldName(hist.plotLocation ? hist.plotLocation.split('•')[0].trim() : hist.cropName);
+      setFieldName(hist.plotLocation ? hist.plotLocation.split('â€¢')[0].trim() : hist.cropName);
       const foundStage = STAGE_OPTIONS.find(s => s.name.toLowerCase().includes(hist.currentStage.toLowerCase()));
       if (foundStage) setSelectedStage(foundStage);
     }
@@ -277,6 +158,26 @@ export default function ScanModal({ isOpen, onClose, initialPlot }) {
   }, [isOpen, activeTab]);
 
   useEffect(() => { return () => stopCamera(); }, []);
+
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          fetch(`https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json`)
+            .then(r => r.json())
+            .then(d => {
+              const addr = d.address;
+              const loc = [addr.village || addr.town || addr.city || addr.county, addr.state].filter(Boolean).join(', ');
+              setUserLocation(loc || `${pos.coords.latitude.toFixed(4)}Â°N, ${pos.coords.longitude.toFixed(4)}Â°E`);
+            })
+            .catch(() => setUserLocation(`${pos.coords.latitude.toFixed(4)}Â°N, ${pos.coords.longitude.toFixed(4)}Â°E`));
+        },
+        () => setUserLocation('Location unavailable')
+      );
+    } else {
+      setUserLocation('Location not supported');
+    }
+  }, []);
 
 
   const startCamera = async () => {
@@ -390,7 +291,7 @@ export default function ScanModal({ isOpen, onClose, initialPlot }) {
               </span>
             </div>
             <h2 className="text-2xl font-extrabold text-[#1a4d2e]">Crop Disease Scanner</h2>
-            <p className="text-xs text-gray-500 mt-0.5">Upload a photo or use the live camera — both use Gemini AI.</p>
+            <p className="text-xs text-gray-500 mt-0.5">Upload a photo or use the live camera â€” both use Gemini AI.</p>
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 cursor-pointer mt-1">
             <X className="w-5 h-5" />
@@ -441,7 +342,6 @@ export default function ScanModal({ isOpen, onClose, initialPlot }) {
                   </div>
                 )}
               </div>
-              <ScanFormFields {...formProps} />
               <div className="pt-1">
                 <button type="button" onClick={() => handleAnalyze()}
                   className="w-full py-3.5 px-6 rounded-xl bg-[#206332] hover:bg-[#184e27] text-white font-extrabold text-sm tracking-wide shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
@@ -524,7 +424,7 @@ export default function ScanModal({ isOpen, onClose, initialPlot }) {
                   <div className="flex items-center gap-2 text-xs">
                     <Info className="w-3.5 h-3.5 text-gray-400" />
                     {cameraActive
-                      ? <span className="text-emerald-700 font-medium">Camera live — position crop and tap capture</span>
+                      ? <span className="text-emerald-700 font-medium">Camera live â€” position crop and tap capture</span>
                       : <span className="text-gray-500">Camera permission required for live scanning.</span>}
                   </div>
                   {cameraActive && (
@@ -534,7 +434,6 @@ export default function ScanModal({ isOpen, onClose, initialPlot }) {
                   )}
                 </div>
               )}
-              <ScanFormFields {...formProps} />
               {capturedFrame && (
                 <div className="pt-1">
                   <button type="button" onClick={() => handleAnalyze(capturedFrame)}
@@ -572,7 +471,7 @@ export default function ScanModal({ isOpen, onClose, initialPlot }) {
                       </span>
                     </div>
                     <h3 className="text-xl font-extrabold text-gray-900">{diagnosisResult.diseaseName}</h3>
-                    <p className="text-xs text-gray-600 mt-0.5">Crop: <span className="font-semibold">{selectedCrop ? selectedCrop.name : 'Unknown'}</span></p>
+                    <p className="text-xs text-gray-600 mt-0.5">Crop: <span className="font-semibold">{diagnosisResult.detectedCrop || 'Unknown'}</span></p>
                     {diagnosisResult.pathogen && <p className="text-xs text-emerald-800 font-mono mt-0.5">Pathogen: {diagnosisResult.pathogen}</p>}
                   </div>
                   <span className="text-[10px] font-bold text-gray-400 bg-white px-2 py-1 rounded-lg border border-gray-200 shrink-0">{modelUsed}</span>
@@ -608,7 +507,7 @@ export default function ScanModal({ isOpen, onClose, initialPlot }) {
                   <div className="p-3.5 rounded-xl bg-[#edf7ef] border border-green-200">
                     <h5 className="text-[11px] font-bold text-green-900 uppercase mb-1.5 flex items-center gap-1.5"><Leaf className="w-3.5 h-3.5" /> Organic:</h5>
                     <ul className="space-y-1 text-xs text-gray-700">
-                      {diagnosisResult.organicRemedies.map((r, i) => <li key={i} className="flex items-start gap-1.5"><span className="text-[#257038] font-bold">•</span><span>{r}</span></li>)}
+                      {diagnosisResult.organicRemedies.map((r, i) => <li key={i} className="flex items-start gap-1.5"><span className="text-[#257038] font-bold">â€¢</span><span>{r}</span></li>)}
                     </ul>
                   </div>
                 )}
@@ -616,7 +515,7 @@ export default function ScanModal({ isOpen, onClose, initialPlot }) {
                   <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-200">
                     <h5 className="text-[11px] font-bold text-gray-900 uppercase mb-1.5 flex items-center gap-1.5"><ShieldAlert className="w-3.5 h-3.5 text-[#257038]" /> Chemical:</h5>
                     <ul className="space-y-1 text-xs text-gray-700">
-                      {diagnosisResult.chemicalTreatments.map((c, i) => <li key={i} className="flex items-start gap-1.5"><span className="text-[#257038] font-bold">•</span><span>{c}</span></li>)}
+                      {diagnosisResult.chemicalTreatments.map((c, i) => <li key={i} className="flex items-start gap-1.5"><span className="text-[#257038] font-bold">â€¢</span><span>{c}</span></li>)}
                     </ul>
                   </div>
                 )}
@@ -660,7 +559,7 @@ export default function ScanModal({ isOpen, onClose, initialPlot }) {
                         }`}
                       >
                         <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span>Yes, Treatment Worked ✓</span>
+                        <span>Yes, Treatment Worked âœ“</span>
                       </button>
 
                       <button
@@ -673,7 +572,7 @@ export default function ScanModal({ isOpen, onClose, initialPlot }) {
                         }`}
                       >
                         <AlertTriangle className="w-3.5 h-3.5" />
-                        <span>No, Disease Resisted / Spread ⚠️</span>
+                        <span>No, Disease Resisted / Spread âš ï¸</span>
                       </button>
                     </div>
                   </div>
@@ -687,8 +586,8 @@ export default function ScanModal({ isOpen, onClose, initialPlot }) {
                       <p className="font-bold flex items-center gap-1.5">
                         {treatmentOutcomeWorked ? <Check className="w-4 h-4 text-emerald-700" /> : <AlertTriangle className="w-4 h-4 text-amber-700" />}
                         {treatmentOutcomeWorked
-                          ? 'Treatment Effective • Lesions Controlled'
-                          : 'Resistance Detected • New Adaptive Tactic Deployed'}
+                          ? 'Treatment Effective â€¢ Lesions Controlled'
+                          : 'Resistance Detected â€¢ New Adaptive Tactic Deployed'}
                       </p>
                       <p className="mt-1 text-gray-700">
                         {treatmentOutcomeWorked
@@ -705,7 +604,7 @@ export default function ScanModal({ isOpen, onClose, initialPlot }) {
                     className="w-full py-2.5 px-4 rounded-xl bg-[#206332] hover:bg-[#184e27] text-white text-xs font-bold flex items-center justify-center gap-2 cursor-pointer shadow-xs disabled:opacity-60"
                   >
                     <CheckCircle2 className="w-4 h-4" />
-                    <span>{savedToHistory ? '✓ Saved to Plot Health Diary!' : 'Save Follow-Up Scan to Health Diary'}</span>
+                    <span>{savedToHistory ? 'âœ“ Saved to Plot Health Diary!' : 'Save Follow-Up Scan to Health Diary'}</span>
                   </button>
                 </div>
               )}
